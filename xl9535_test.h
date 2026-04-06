@@ -43,22 +43,22 @@ void showXL9535() {
   bool btnApressed = (in1 & 0x10) == 0;
   bool btnBpressed = (in0 & 0x04) == 0;
 
-  tft.setTextSize(2);
-  tft.setTextColor(CP_ACCENT);
-  tft.setCursor(5, y); tft.print("BTN A:");
+  canvas.setTextSize(2);
+  canvas.setTextColor(CP_ACCENT);
+  canvas.setCursor(5, y); canvas.print("BTN A:");
   y += 4;
-  tft.setTextSize(3);
-  tft.setTextColor(btnApressed ? CP_OK : CP_DIM);
-  tft.setCursor(20, y + 4); tft.print(btnApressed ? "PRESSED" : "idle");
+  canvas.setTextSize(3);
+  canvas.setTextColor(btnApressed ? CP_OK : CP_DIM);
+  canvas.setCursor(20, y + 4); canvas.print(btnApressed ? "PRESSED" : "idle");
   y += 40;
 
-  tft.setTextSize(2);
-  tft.setTextColor(CP_ACCENT);
-  tft.setCursor(5, y); tft.print("BTN B:");
+  canvas.setTextSize(2);
+  canvas.setTextColor(CP_ACCENT);
+  canvas.setCursor(5, y); canvas.print("BTN B:");
   y += 4;
-  tft.setTextSize(3);
-  tft.setTextColor(btnBpressed ? CP_OK : CP_DIM);
-  tft.setCursor(20, y + 4); tft.print(btnBpressed ? "PRESSED" : "idle");
+  canvas.setTextSize(3);
+  canvas.setTextColor(btnBpressed ? CP_OK : CP_DIM);
+  canvas.setCursor(20, y + 4); canvas.print(btnBpressed ? "PRESSED" : "idle");
   y += 44;
 
   // Register detail
@@ -69,7 +69,7 @@ void showXL9535() {
   uint8_t cfg0 = Wire.read();
   uint8_t cfg1 = Wire.read();
 
-  tft.drawFastHLine(0, y, 240, CP_ACCENT);
+  canvas.drawFastHLine(0, y, 240, CP_ACCENT);
   y += 8;
 
   snprintf(buf, sizeof(buf), "0x%02X  dir:0x%02X", in0, cfg0);
@@ -78,9 +78,9 @@ void showXL9535() {
   printRow(y, CP_ACCENT, "Port 1:", CP_VALUE, buf);
   y += 4;
 
-  tft.setTextSize(1);
-  tft.setTextColor(CP_DIM);
-  tft.setCursor(5, y); tft.print("P0.0=BLK P0.1=CAM P0.2=B P1.4=A P1.7=OK");
+  canvas.setTextSize(1);
+  canvas.setTextColor(CP_DIM);
+  canvas.setCursor(5, y); canvas.print("P0.0=BLK P0.1=CAM P0.2=B P1.4=A P1.7=OK");
 
   drawFooter();
 }

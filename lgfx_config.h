@@ -38,7 +38,7 @@ public:
       cfg.panel_height    = 320;
       cfg.offset_x        = 0;
       cfg.offset_y        = 0;
-      cfg.offset_rotation = 2;           // portrait — same orientation as setRotation(2)
+      cfg.offset_rotation = 0;           // portrait, no rotation offset
       cfg.dummy_read_pixel = 8;
       cfg.dummy_read_bits  = 1;
       cfg.readable        = false;       // no MISO

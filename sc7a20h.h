@@ -16,10 +16,10 @@ void showSC7A20H() {
   int y = 32;
   char buf[40];
 
-  tft.setTextColor(CP_ACCENT);
-  tft.setTextSize(1);
-  tft.setCursor(5, y);
-  tft.print("3-Axis Accelerometer");
+  canvas.setTextColor(CP_ACCENT);
+  canvas.setTextSize(1);
+  canvas.setCursor(5, y);
+  canvas.print("3-Axis Accelerometer");
   y += 18;
 
   printRow(y, CP_ACCENT, "I2C Addr:", CP_VALUE, "0x19");
@@ -66,26 +66,26 @@ void showSC7A20H() {
   float gY = rawY / 16384.0f;
   float gZ = rawZ / 16384.0f;
 
-  tft.setTextSize(2);
-  tft.setTextColor(CP_ERR);
-  tft.setCursor(5, y);
-  dtostrf(gX, 7, 3, buf); tft.print("X: "); tft.print(buf); tft.print(" g");
+  canvas.setTextSize(2);
+  canvas.setTextColor(CP_ERR);
+  canvas.setCursor(5, y);
+  dtostrf(gX, 7, 3, buf); canvas.print("X: "); canvas.print(buf); canvas.print(" g");
   y += 28;
 
-  tft.setTextColor(CP_OK);
-  tft.setCursor(5, y);
-  dtostrf(gY, 7, 3, buf); tft.print("Y: "); tft.print(buf); tft.print(" g");
+  canvas.setTextColor(CP_OK);
+  canvas.setCursor(5, y);
+  dtostrf(gY, 7, 3, buf); canvas.print("Y: "); canvas.print(buf); canvas.print(" g");
   y += 28;
 
-  tft.setTextColor(CP_ACCENT);
-  tft.setCursor(5, y);
-  dtostrf(gZ, 7, 3, buf); tft.print("Z: "); tft.print(buf); tft.print(" g");
+  canvas.setTextColor(CP_ACCENT);
+  canvas.setCursor(5, y);
+  dtostrf(gZ, 7, 3, buf); canvas.print("Z: "); canvas.print(buf); canvas.print(" g");
   y += 34;
 
-  tft.setTextSize(1);
-  tft.setTextColor(CP_DIM);
+  canvas.setTextSize(1);
+  canvas.setTextColor(CP_DIM);
   snprintf(buf, sizeof(buf), "Raw  X:%6d  Y:%6d  Z:%6d", rawX, rawY, rawZ);
-  tft.setCursor(5, y); tft.print(buf);
+  canvas.setCursor(5, y); canvas.print(buf);
 
   drawFooter();
 }

@@ -16,10 +16,10 @@ void showFontChip() {
   clearContent();
   int y = 32;
 
-  tft.setTextColor(CP_ACCENT);
-  tft.setTextSize(1);
-  tft.setCursor(5, y);
-  tft.print("GT30L24A3W Font ROM (SPI)");
+  canvas.setTextColor(CP_ACCENT);
+  canvas.setTextSize(1);
+  canvas.setCursor(5, y);
+  canvas.print("GT30L24A3W Font ROM (SPI)");
   y += 18;
 
   printRow(y, CP_ACCENT, "Bus/CS:", CP_VALUE, "HSPI, GPIO40 NPN HIGH=sel");
@@ -79,14 +79,14 @@ void showFontChip() {
       for (int row = 0; row < h; row++) {
         for (int col = 0; col < w; col++) {
           if ((bmp[row * bpr + col / 8] >> (7 - (col % 8))) & 1)
-            tft.fillRect(gx + col * scale, gy + row * scale, scale, scale, color);
+            canvas.fillRect(gx + col * scale, gy + row * scale, scale, scale, color);
         }
       }
     };
 
     // ---- Row 1: Letter 'A' in all 5 font sizes side by side ----
-    tft.setTextColor(CP_ACCENT);
-    tft.setCursor(5, y); tft.print("'A' all sizes (5x7  6x12  8x16  12x24  16x32)");
+    canvas.setTextColor(CP_ACCENT);
+    canvas.setCursor(5, y); canvas.print("'A' all sizes (5x7  6x12  8x16  12x24  16x32)");
     y += 11;
 
     uint8_t g5x7[8], g6x12[12], g8x16[16], g12x24[48], g16x32[64];
@@ -107,17 +107,17 @@ void showFontChip() {
     y += 70; // tallest glyph at 2x = 64px, +6 gap
 
     // Size labels
-    tft.setTextColor(CP_DIM);
-    tft.setCursor( 5, y); tft.print("5x7");
-    tft.setCursor(25, y); tft.print("6x12");
-    tft.setCursor(50, y); tft.print("8x16");
-    tft.setCursor(80, y); tft.print("12x24");
-    tft.setCursor(135,y); tft.print("16x32");
+    canvas.setTextColor(CP_DIM);
+    canvas.setCursor( 5, y); canvas.print("5x7");
+    canvas.setCursor(25, y); canvas.print("6x12");
+    canvas.setCursor(50, y); canvas.print("8x16");
+    canvas.setCursor(80, y); canvas.print("12x24");
+    canvas.setCursor(135,y); canvas.print("16x32");
     y += 12;
 
     // ---- Row 2: A–L in 8x16 at 2x ----
-    tft.setTextColor(CP_ACCENT);
-    tft.setCursor(5, y); tft.print("A-L  8x16:");
+    canvas.setTextColor(CP_ACCENT);
+    canvas.setCursor(5, y); canvas.print("A-L  8x16:");
     y += 11;
     uint8_t g[16];
     for (int ci = 0; ci < 12; ci++) {
@@ -127,8 +127,8 @@ void showFontChip() {
     y += 36;
 
     // ---- Row 3: 0–9 in 6x12 at 2x ----
-    tft.setTextColor(CP_ACCENT);
-    tft.setCursor(5, y); tft.print("0-9  6x12:");
+    canvas.setTextColor(CP_ACCENT);
+    canvas.setCursor(5, y); canvas.print("0-9  6x12:");
     y += 11;
     uint8_t g6[12];
     for (int ci = 0; ci < 10; ci++) {
@@ -137,13 +137,13 @@ void showFontChip() {
     }
     y += 30;
 
-    tft.setTextColor(CP_DIM);
-    tft.setCursor(5, y); tft.print("24Mb GB2312/GBK. CS GPIO40 shared w/SD.");
+    canvas.setTextColor(CP_DIM);
+    canvas.setCursor(5, y); canvas.print("24Mb GB2312/GBK. CS GPIO40 shared w/SD.");
 
   } else {
-    tft.setTextColor(CP_DIM);
-    tft.setCursor(5, y); tft.print("Check SD card removed or SD.end() called."); y += 12;
-    tft.setCursor(5, y); tft.print("GPIO40: font=HIGH, SD=LOW (NPN shared).");
+    canvas.setTextColor(CP_DIM);
+    canvas.setCursor(5, y); canvas.print("Check SD card removed or SD.end() called."); y += 12;
+    canvas.setCursor(5, y); canvas.print("GPIO40: font=HIGH, SD=LOW (NPN shared).");
   }
 
   spiSD.endTransaction();

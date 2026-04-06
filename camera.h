@@ -116,9 +116,10 @@ void cameraDrawFrame() {
   int imgY = 24 + 54;
   tft.startWrite();
   tft.setAddrWindow(0, imgY, fb->width, fb->height);
-  // esp_camera RGB565 is big-endian — lgfx::rgb565_t preserves byte order.
+  // esp_camera RGB565 is big-endian (high byte first). lgfx::swap565_t matches
+  // this byte order; rgb565_t would swap bytes within each pixel → garish colors.
   // pushPixelsDMA() returns immediately; DMA runs in background.
-  tft.pushPixelsDMA((lgfx::rgb565_t*)fb->buf, fb->width * fb->height);
+  tft.pushPixelsDMA((lgfx::swap565_t*)fb->buf, fb->width * fb->height);
   tft.endWrite();
 
   prevFb = fb;  // keep alive until next call's waitDMA()
@@ -137,7 +138,7 @@ void cameraTaskFn(void* pvParameters) {
         }
         xSemaphoreGive(displayMutex);
       }
-      taskYIELD();  // prevent starving loopTask between back-to-back frames
+      vTaskDelay(pdMS_TO_TICKS(1));  // block camera task so loop task (priority 1) can run
     } else {
       vTaskDelay(pdMS_TO_TICKS(50));  // sleep when not on camera screen
     }
@@ -150,22 +151,23 @@ void showCamera() {
   int y = 32;
 
   if (cameraInitialized) {
-    // Just redraw static labels — frame updates happen in loop()
-    tft.setTextSize(1);
-    tft.setTextColor(CP_OK);
-    tft.setCursor(5, y); tft.print("LIVE  240x176 RGB565");
+    // Just redraw static labels — frame updates happen via DMA in cameraTaskFn()
+    canvas.setTextSize(1);
+    canvas.setTextColor(CP_OK);
+    canvas.setCursor(5, y); canvas.print("LIVE  240x176 RGB565");
     y += 14;
-    tft.setTextColor(CP_DIM);
-    tft.setCursor(5, y); tft.print("HQVGA  20 MHz XCLK  DVP 8-bit");
-    return; // frame drawn by loop()
+    canvas.setTextColor(CP_DIM);
+    canvas.setCursor(5, y); canvas.print("HQVGA  20 MHz XCLK  DVP 8-bit");
+    return; // canvas pushed by caller; camera frame drawn by cameraTaskFn()
   }
 
-  tft.setTextSize(1);
-  tft.setTextColor(CP_ACCENT);
-  tft.setCursor(5, y); tft.print("Initialising camera..."); y += 16;
-  tft.setTextColor(CP_DIM);
-  tft.setCursor(5, y); tft.print("RST pulse + esp_camera_init"); y += 16;
+  canvas.setTextSize(1);
+  canvas.setTextColor(CP_ACCENT);
+  canvas.setCursor(5, y); canvas.print("Initialising camera..."); y += 16;
+  canvas.setTextColor(CP_DIM);
+  canvas.setCursor(5, y); canvas.print("RST pulse + esp_camera_init"); y += 16;
   drawFooter();
+  canvas.pushSprite(0, 0); // show "Initialising..." immediately before blocking init
 
   // Perform reset pulse while Wire is still available
   camSetReset(true);  delay(10);
@@ -173,25 +175,25 @@ void showCamera() {
 
   if (cameraInit()) {
     cameraInitialized = true;
-    // Redraw with live status
     clearContent();
     y = 32;
-    tft.setTextSize(1);
-    tft.setTextColor(CP_OK);
-    tft.setCursor(5, y); tft.print("LIVE  240x176 RGB565");
+    canvas.setTextSize(1);
+    canvas.setTextColor(CP_OK);
+    canvas.setCursor(5, y); canvas.print("LIVE  240x176 RGB565");
     y += 14;
-    tft.setTextColor(CP_DIM);
-    tft.setCursor(5, y); tft.print("HQVGA  20 MHz XCLK  DVP 8-bit");
+    canvas.setTextColor(CP_DIM);
+    canvas.setCursor(5, y); canvas.print("HQVGA  20 MHz XCLK  DVP 8-bit");
   } else {
     clearContent();
     y = 32;
-    tft.setTextSize(1);
-    tft.setTextColor(CP_ERR);
-    tft.setCursor(5, y); tft.print("esp_camera_init FAILED"); y += 16;
-    tft.setTextColor(CP_DIM);
-    tft.setCursor(5, y); tft.print("Check flex cable seating"); y += 12;
-    tft.setCursor(5, y); tft.print("and power-cycle the board.");
+    canvas.setTextSize(1);
+    canvas.setTextColor(CP_ERR);
+    canvas.setCursor(5, y); canvas.print("esp_camera_init FAILED"); y += 16;
+    canvas.setTextColor(CP_DIM);
+    canvas.setCursor(5, y); canvas.print("Check flex cable seating"); y += 12;
+    canvas.setCursor(5, y); canvas.print("and power-cycle the board.");
   }
 
   drawFooter();
+  // final state pushed by caller (canvas.pushSprite in main loop)
 }

@@ -28,42 +28,42 @@
 // ======================================================
 
 void drawHeader(const char* title) {
-  tft.fillRect(0, 0, 240, 24, CP_HEADER_BG);
-  tft.drawFastHLine(0, 23, 240, CP_TITLE);
-  tft.setTextColor(CP_TITLE);
-  tft.setTextSize(2);
-  tft.setCursor(5, 4);
-  tft.print(title);
+  canvas.fillRect(0, 0, 240, 24, CP_HEADER_BG);
+  canvas.drawFastHLine(0, 23, 240, CP_TITLE);
+  canvas.setTextColor(CP_TITLE);
+  canvas.setTextSize(2);
+  canvas.setCursor(5, 4);
+  canvas.print(title);
   char badge[16];
   snprintf(badge, sizeof(badge), "%d/%d", currentTest + 1, NUM_TESTS);
-  tft.setTextSize(1);
-  tft.setTextColor(CP_DIM);
-  tft.setCursor(205, 8);
-  tft.print(badge);
+  canvas.setTextSize(1);
+  canvas.setTextColor(CP_DIM);
+  canvas.setCursor(205, 8);
+  canvas.print(badge);
 }
 
 void drawFooter() {
-  tft.drawFastHLine(0, 307, 240, CP_TITLE);
-  tft.fillRect(0, 308, 240, 12, CP_FOOTER_BG);
-  tft.setTextColor(CP_DIM);
-  tft.setTextSize(1);
-  tft.setCursor(5, 310);
-  tft.print("A: NEXT   B: PREV");
+  canvas.drawFastHLine(0, 307, 240, CP_TITLE);
+  canvas.fillRect(0, 308, 240, 12, CP_FOOTER_BG);
+  canvas.setTextColor(CP_DIM);
+  canvas.setTextSize(1);
+  canvas.setCursor(5, 310);
+  canvas.print("A: NEXT   B: PREV");
 }
 
 void clearContent() {
-  tft.fillRect(0, 24, 240, 284, CP_BG);
+  canvas.fillRect(0, 24, 240, 284, CP_BG);
 }
 
 void printRow(int& y, uint16_t labelColor, const char* label,
               uint16_t valColor, const char* val) {
-  tft.setTextSize(1);
-  tft.setTextColor(labelColor);
-  tft.setCursor(5, y);
-  tft.print(label);
-  tft.setTextColor(valColor);
-  tft.setCursor(100, y);
-  tft.print(val);
+  canvas.setTextSize(1);
+  canvas.setTextColor(labelColor);
+  canvas.setCursor(5, y);
+  canvas.print(label);
+  canvas.setTextColor(valColor);
+  canvas.setCursor(100, y);
+  canvas.print(val);
   y += 14;
 }
 
@@ -75,7 +75,7 @@ void drawBar(int x, int y, int w, int h, float fill) {
   else                   color = CP_ERR;
 
   int fillPx = (int)(fill * w);
-  tft.fillRect(x, y, fillPx, h, color);
-  tft.fillRect(x + fillPx, y, w - fillPx, h, CP_FOOTER_BG);
-  tft.drawRect(x, y, w, h, CP_DIM);
+  canvas.fillRect(x, y, fillPx, h, color);
+  canvas.fillRect(x + fillPx, y, w - fillPx, h, CP_FOOTER_BG);
+  canvas.drawRect(x, y, w, h, CP_DIM);
 }

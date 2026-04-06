@@ -10,7 +10,8 @@
 // OBJECTS (defined in K10ComponentTest.ino)
 // ======================================================
 extern SPIClass  spiSD;
-extern LGFX      tft;
+extern LGFX        tft;
+extern LGFX_Sprite canvas;
 extern Adafruit_NeoPixel leds;
 
 // ======================================================
@@ -33,9 +34,8 @@ extern unsigned long lastLedStep;
 // SPEAKER COMPONENT STATE
 // ======================================================
 extern bool          i2sInstalled;
-extern int           spkrVolStep;
 extern float         spkrPhase;
-extern unsigned long lastVolStep;
+extern float         spkrCurrentAmp;   // linear ramp fraction 0..1 (PCM amp = frac² × 32767)
 
 // ======================================================
 // MIC COMPONENT STATE

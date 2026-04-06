@@ -16,10 +16,10 @@ void showLTR303() {
   int y = 32;
   char buf[32];
 
-  tft.setTextColor(CP_ACCENT);
-  tft.setTextSize(1);
-  tft.setCursor(5, y);
-  tft.print("Ambient Light Sensor");
+  canvas.setTextColor(CP_ACCENT);
+  canvas.setTextSize(1);
+  canvas.setCursor(5, y);
+  canvas.print("Ambient Light Sensor");
   y += 18;
 
   printRow(y, CP_ACCENT, "I2C Addr:", CP_VALUE, "0x29");
@@ -57,24 +57,24 @@ void showLTR303() {
     if (lux < 0) lux = 0;
   }
 
-  tft.setTextSize(3);
-  tft.setTextColor(CP_BIG);
-  tft.setCursor(5, y);
-  dtostrf(lux, 7, 1, buf); tft.print(buf);
-  tft.setTextSize(2); tft.print(" lux");
+  canvas.setTextSize(3);
+  canvas.setTextColor(CP_BIG);
+  canvas.setCursor(5, y);
+  dtostrf(lux, 7, 1, buf); canvas.print(buf);
+  canvas.setTextSize(2); canvas.print(" lux");
   y += 44;
 
-  tft.setTextSize(1);
-  tft.setTextColor(CP_VALUE);
+  canvas.setTextSize(1);
+  canvas.setTextColor(CP_VALUE);
   snprintf(buf, sizeof(buf), "CH0 Vis+IR: %5u counts", ch0);
-  tft.setCursor(5, y); tft.print(buf); y += 14;
+  canvas.setCursor(5, y); canvas.print(buf); y += 14;
   snprintf(buf, sizeof(buf), "CH1 IR:     %5u counts", ch1);
-  tft.setCursor(5, y); tft.print(buf); y += 14;
+  canvas.setCursor(5, y); canvas.print(buf); y += 14;
 
-  tft.setTextColor(CP_DIM);
+  canvas.setTextColor(CP_DIM);
   float ratio = (ch0 + ch1 > 0) ? (float)ch1 / (float)(ch0 + ch1) : 0.0f;
   snprintf(buf, sizeof(buf), "IR Ratio: %.3f", ratio);
-  tft.setCursor(5, y); tft.print(buf);
+  canvas.setCursor(5, y); canvas.print(buf);
 
   drawFooter();
 }

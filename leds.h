@@ -33,36 +33,36 @@ void showLEDs() {
   clearContent();
   int y = 32;
 
-  tft.setTextColor(CP_ACCENT);
-  tft.setTextSize(1);
-  tft.setCursor(5, y);
-  tft.print("3x WS2812 + SuccessLed");
+  canvas.setTextColor(CP_ACCENT);
+  canvas.setTextSize(1);
+  canvas.setCursor(5, y);
+  canvas.print("3x WS2812 + SuccessLed");
   y += 18;
   printRow(y, CP_ACCENT, "Data Pin:", CP_VALUE, "GPIO 46");
   printRow(y, CP_ACCENT, "Count:",    CP_VALUE, "3 RGB + 1 mono");
   y += 12;
 
-  tft.setTextSize(3);
-  tft.setTextColor(stepTFT[ledCycleStep]);
+  canvas.setTextSize(3);
+  canvas.setTextColor(stepTFT[ledCycleStep]);
   int16_t tw = strlen(stepNames[ledCycleStep]) * 18;
-  tft.setCursor((240 - tw) / 2, y);
-  tft.print(stepNames[ledCycleStep]);
+  canvas.setCursor((240 - tw) / 2, y);
+  canvas.print(stepNames[ledCycleStep]);
   y += 46;
 
   for (int i = 0; i < 4; i++) {
     int cx = 30 + i * 60;
     uint16_t color = (i < LED_COUNT) ? stepTFT[ledCycleStep]
                                       : (ledCycleStep == 4 ? CP_FOOTER_BG : CP_OK);
-    tft.fillCircle(cx, y + 20, 22, color);
-    tft.drawCircle(cx, y + 20, 22, CP_DIM);
+    canvas.fillCircle(cx, y + 20, 22, color);
+    canvas.drawCircle(cx, y + 20, 22, CP_DIM);
   }
   y += 58;
 
-  tft.setTextSize(1);
-  tft.setTextColor(CP_DIM);
-  tft.setCursor(5, y); tft.print("Changes every 1s");
+  canvas.setTextSize(1);
+  canvas.setTextColor(CP_DIM);
+  canvas.setCursor(5, y); canvas.print("Changes every 1s");
   y += 14;
-  tft.setCursor(5, y); tft.print("Verify on physical LEDs");
+  canvas.setCursor(5, y); canvas.print("Verify on physical LEDs");
 
   drawFooter();
 }

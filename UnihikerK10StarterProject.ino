@@ -50,8 +50,9 @@
 // ======================================================
 // OBJECTS
 // ======================================================
-SPIClass spiSD(HSPI);
-LGFX tft;
+SPIClass   spiSD(HSPI);
+LGFX       tft;
+LGFX_Sprite canvas(&tft);
 Adafruit_NeoPixel leds(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 // ======================================================
@@ -70,9 +71,8 @@ unsigned long lastLedStep = 0;
 
 // Speaker component state
 bool  i2sInstalled  = false;
-int   spkrVolStep   = 0;    // 0–4 → 20%..100%
 float spkrPhase     = 0.0f;
-unsigned long lastVolStep = 0;
+float spkrCurrentAmp = 0.0f;  // linear ramp fraction 0..1; PCM amp = frac² × 32767
 
 // Mic component state — stored as dBFS (0 = full scale, floor = silence)
 float micDbL        = MIC_FLOOR_DB;
@@ -130,6 +130,11 @@ void setup() {
   tft.init();
   tft.fillScreen(0x0000);
 
+  canvas.setPsram(true);
+  canvas.setColorDepth(16);
+  canvas.createSprite(240, 320);
+  canvas.fillScreen(0x0000);
+
   leds.begin();
   leds.clear();
   leds.show();
@@ -179,7 +184,7 @@ void loop() {
     }
     currentTest = (currentTest + 1) % NUM_TESTS;
     if (currentTest == 4) { ledCycleStep = 0; lastLedStep = now; }
-    if (currentTest == 6) { spkrVolStep = 0; spkrPhase = 0.0f; lastVolStep = now; }
+    if (currentTest == 6) { spkrPhase = 0.0f; spkrCurrentAmp = 0.0f; }
     if (currentTest == 7) { micPeakDbL = MIC_FLOOR_DB; micPeakDbR = MIC_FLOOR_DB; }
     needsRedraw = true;
     lastRefresh = now;
@@ -194,7 +199,7 @@ void loop() {
     }
     currentTest = (currentTest - 1 + NUM_TESTS) % NUM_TESTS;
     if (currentTest == 4) { ledCycleStep = 0; lastLedStep = now; }
-    if (currentTest == 6) { spkrVolStep = 0; spkrPhase = 0.0f; lastVolStep = now; }
+    if (currentTest == 6) { spkrPhase = 0.0f; spkrCurrentAmp = 0.0f; }
     if (currentTest == 7) { micPeakDbL = MIC_FLOOR_DB; micPeakDbR = MIC_FLOOR_DB; }
     needsRedraw = true;
     lastRefresh = now;
@@ -233,6 +238,7 @@ void loop() {
       (spkrActive && now - lastRefresh >= 1000)) {
     xSemaphoreTake(displayMutex, portMAX_DELAY);
     renderCurrentTest();
+    canvas.pushSprite(0, 0); // camera screen: pushes header; DMA task overwrites content area
     needsRedraw = false;
     lastRefresh = now;
     xSemaphoreGive(displayMutex);

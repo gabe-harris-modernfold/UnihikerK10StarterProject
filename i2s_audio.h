@@ -27,6 +27,7 @@ void i2sInstallSpeaker() {
     .bits_per_chan         = I2S_BITS_PER_CHAN_DEFAULT
   };
   i2s_driver_install(I2S_PORT, &cfg, 0, NULL);
+  i2s_zero_dma_buffer(I2S_PORT);  // zero DMA buffers BEFORE pins go live — prevents startup screech
 
   i2s_pin_config_t pins = {
     .mck_io_num   = IIS_MCLK,            // GPIO 3
@@ -78,22 +79,28 @@ void i2sUninstall() {
 
 // Called every loop() when on the speaker screen — fills I2S TX buffer
 void fillSpeakerBuffer(unsigned long now) {
-  // Advance volume step every 2s
-  static const float volLevels[] = { 0.2f, 0.4f, 0.6f, 0.8f, 1.0f };
-  if (now - lastVolStep >= 2000) {
-    spkrVolStep = (spkrVolStep + 1) % 5;
-    lastVolStep = now;
-    needsRedraw = true;
+  (void)now;
+
+  // Advance ramp fraction 0..1 once per chunk (256 samples ≈ 5.8 ms — inaudible granularity).
+  const int   CHUNK    = 256;
+  const float fracStep = (float)CHUNK / (SAMPLE_RATE * 30.0f);
+  if (spkrCurrentAmp < 1.0f) {
+    spkrCurrentAmp += fracStep;
+    if (spkrCurrentAmp > 1.0f) spkrCurrentAmp = 1.0f;
   }
 
-  // Generate one chunk of sine wave at current volume
-  const int CHUNK = 256;
+  // dB-linear scaling: fraction 0→1 maps to -60dBFS→-40dBFS (20 dB range).
+  // The NS4168 amp saturates at roughly -40dBFS (~328 PCM) on this hardware,
+  // so this stretches the entire audible fade across the full 30-second ramp.
+  // powf is called once per chunk, not per sample — negligible cost.
+  float dbFS   = -60.0f + spkrCurrentAmp * 20.0f;
+  float chunkAmp = 32767.0f * powf(10.0f, dbFS / 20.0f);
+
   int16_t buf[CHUNK * 2]; // stereo interleaved
   const float phaseInc = 2.0f * (float)M_PI * TONE_HZ / SAMPLE_RATE;
-  float amp = volLevels[spkrVolStep] * 32767.0f;
 
   for (int i = 0; i < CHUNK; i++) {
-    int16_t s = (int16_t)(amp * sinf(spkrPhase));
+    int16_t s = (int16_t)(chunkAmp * sinf(spkrPhase));
     spkrPhase += phaseInc;
     if (spkrPhase >= 2.0f * (float)M_PI) spkrPhase -= 2.0f * (float)M_PI;
     buf[i * 2]     = s;

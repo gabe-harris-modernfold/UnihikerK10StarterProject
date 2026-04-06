@@ -16,10 +16,10 @@ void showAHT20() {
   int y = 32;
   char buf[32];
 
-  tft.setTextColor(CP_ACCENT);
-  tft.setTextSize(1);
-  tft.setCursor(5, y);
-  tft.print("Temp / Humidity Sensor");
+  canvas.setTextColor(CP_ACCENT);
+  canvas.setTextSize(1);
+  canvas.setCursor(5, y);
+  canvas.print("Temp / Humidity Sensor");
   y += 18;
 
   printRow(y, CP_ACCENT, "I2C Addr:", CP_VALUE, "0x38");
@@ -51,32 +51,32 @@ void showAHT20() {
   float tempC    = (float)rawTemp / 1048576.0f * 200.0f - 50.0f;
   float tempF    = tempC * 9.0f / 5.0f + 32.0f;
 
-  tft.setTextSize(3);
-  tft.setTextColor(CP_BIG);
-  tft.setCursor(5, y);
-  dtostrf(tempC, 5, 1, buf); tft.print(buf);
-  tft.setTextSize(2); tft.print("\xF7""C");
+  canvas.setTextSize(3);
+  canvas.setTextColor(CP_BIG);
+  canvas.setCursor(5, y);
+  dtostrf(tempC, 5, 1, buf); canvas.print(buf);
+  canvas.setTextSize(2); canvas.print("\xF7""C");
   y += 40;
 
-  tft.setTextSize(2);
-  tft.setTextColor(CP_DIM);
-  tft.setCursor(5, y);
-  dtostrf(tempF, 5, 1, buf); tft.print(buf); tft.print("\xF7""F");
+  canvas.setTextSize(2);
+  canvas.setTextColor(CP_DIM);
+  canvas.setCursor(5, y);
+  dtostrf(tempF, 5, 1, buf); canvas.print(buf); canvas.print("\xF7""F");
   y += 30;
 
-  tft.setTextSize(3);
-  tft.setTextColor(CP_ACCENT);
-  tft.setCursor(5, y);
-  dtostrf(humidity, 5, 1, buf); tft.print(buf);
-  tft.setTextSize(2); tft.print(" %RH");
+  canvas.setTextSize(3);
+  canvas.setTextColor(CP_ACCENT);
+  canvas.setCursor(5, y);
+  dtostrf(humidity, 5, 1, buf); canvas.print(buf);
+  canvas.setTextSize(2); canvas.print(" %RH");
   y += 42;
 
-  tft.setTextSize(1);
-  tft.setTextColor(CP_DIM);
+  canvas.setTextSize(1);
+  canvas.setTextColor(CP_DIM);
   snprintf(buf, sizeof(buf), "Raw hum:  0x%05lX", (unsigned long)rawHum);
-  tft.setCursor(5, y); tft.print(buf); y += 12;
+  canvas.setCursor(5, y); canvas.print(buf); y += 12;
   snprintf(buf, sizeof(buf), "Raw temp: 0x%05lX", (unsigned long)rawTemp);
-  tft.setCursor(5, y); tft.print(buf);
+  canvas.setCursor(5, y); canvas.print(buf);
 
   drawFooter();
 }

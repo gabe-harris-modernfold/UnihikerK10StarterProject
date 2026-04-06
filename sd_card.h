@@ -17,10 +17,10 @@ void showSD() {
   int y = 32;
   char buf[32];
 
-  tft.setTextColor(CP_ACCENT);
-  tft.setTextSize(1);
-  tft.setCursor(5, y);
-  tft.print("Micro SD Card (SPI)");
+  canvas.setTextColor(CP_ACCENT);
+  canvas.setTextSize(1);
+  canvas.setCursor(5, y);
+  canvas.print("Micro SD Card (SPI)");
   y += 18;
 
   printRow(y, CP_ACCENT, "Interface:", CP_VALUE, "HSPI");
@@ -33,8 +33,8 @@ void showSD() {
   if (!mounted) {
     printRow(y, CP_ACCENT, "Status:", CP_ERR, "MOUNT FAILED");
     y += 8;
-    tft.setTextColor(CP_DIM);
-    tft.setCursor(5, y); tft.print("Check SD card is inserted");
+    canvas.setTextColor(CP_DIM);
+    canvas.setCursor(5, y); canvas.print("Check SD card is inserted");
     drawFooter(); return;
   }
 
@@ -56,22 +56,22 @@ void showSD() {
   y += 8;
 
   File root = SD.open("/");
-  tft.setTextColor(CP_ACCENT);
-  tft.setCursor(5, y); tft.print("Root:"); y += 13;
-  tft.setTextColor(CP_VALUE);
+  canvas.setTextColor(CP_ACCENT);
+  canvas.setCursor(5, y); canvas.print("Root:"); y += 13;
+  canvas.setTextColor(CP_VALUE);
 
   int count = 0;
   while (count < 9) {
     File entry = root.openNextFile();
     if (!entry) break;
-    tft.setCursor(10, y);
-    tft.print(entry.isDirectory() ? "[D] " : "    ");
-    tft.print(entry.name());
+    canvas.setCursor(10, y);
+    canvas.print(entry.isDirectory() ? "[D] " : "    ");
+    canvas.print(entry.name());
     y += 12;
     count++;
     entry.close();
   }
-  if (count == 0) { tft.setCursor(10, y); tft.print("(empty)"); }
+  if (count == 0) { canvas.setCursor(10, y); canvas.print("(empty)"); }
   root.close();
   SD.end();
 

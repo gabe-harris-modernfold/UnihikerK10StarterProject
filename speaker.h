@@ -6,23 +6,23 @@
 
 // ======================================================
 // Speaker — NS4168 Amplifier via I2S TX
-// 440 Hz sine wave, auto-cycling volume 20–100%
+// 440 Hz sine wave, volume fades from silent to full over ~8 seconds
 // I2S helpers: i2sInstallSpeaker, fillSpeakerBuffer (in i2s_audio.h)
 // ======================================================
 
 void showSpeaker() {
-  static const float volLevels[]  = { 0.2f, 0.4f, 0.6f, 0.8f, 1.0f };
-  static const int   volPct[]     = { 20, 40, 60, 80, 100 };
+  const float volFrac = spkrCurrentAmp;                   // already 0..1 (linear ramp fraction)
+  const int   volPct  = (int)(volFrac * 100.0f + 0.5f);
 
   drawHeader("Speaker");
   clearContent();
   int y = 32;
   char buf[32];
 
-  tft.setTextColor(CP_ACCENT);
-  tft.setTextSize(1);
-  tft.setCursor(5, y);
-  tft.print("NS4168 Amp (I2S TX)");
+  canvas.setTextColor(CP_ACCENT);
+  canvas.setTextSize(1);
+  canvas.setCursor(5, y);
+  canvas.print("NS4168 Amp (I2S TX)");
   y += 18;
 
   printRow(y, CP_ACCENT, "BCLK:",  CP_VALUE, "GPIO 0");
@@ -35,29 +35,29 @@ void showSpeaker() {
   printRow(y, CP_ACCENT, "Sample rate:", CP_VALUE, "44100 Hz, 16-bit");
   y += 12;
 
-  tft.setTextColor(CP_ACCENT);
-  tft.setTextSize(1);
-  tft.setCursor(5, y);
-  tft.print("Volume:");
+  canvas.setTextColor(CP_ACCENT);
+  canvas.setTextSize(1);
+  canvas.setCursor(5, y);
+  canvas.print("Volume:");
   y += 14;
 
-  tft.setTextSize(3);
-  tft.setTextColor(CP_BIG);
-  snprintf(buf, sizeof(buf), " %3d%%", volPct[spkrVolStep]);
-  tft.setCursor(5, y);
-  tft.print(buf);
+  canvas.setTextSize(3);
+  canvas.setTextColor(CP_BIG);
+  snprintf(buf, sizeof(buf), " %3d%%", volPct);
+  canvas.setCursor(5, y);
+  canvas.print(buf);
   y += 40;
 
-  drawBar(5, y, 220, 24, volLevels[spkrVolStep]);
+  drawBar(5, y, 220, 24, volFrac);
   y += 34;
 
-  tft.setTextSize(1);
-  tft.setTextColor(CP_DIM);
-  tft.setCursor(5, y);
-  tft.print("Auto-cycles 20->100% (2s each)");
+  canvas.setTextSize(1);
+  canvas.setTextColor(CP_DIM);
+  canvas.setCursor(5, y);
+  canvas.print("Fades in over 30s (dB-linear scale)");
   y += 14;
-  tft.setCursor(5, y);
-  tft.print("Listen for tone on speaker");
+  canvas.setCursor(5, y);
+  canvas.print("Listen for tone on speaker");
 
   drawFooter();
 }
