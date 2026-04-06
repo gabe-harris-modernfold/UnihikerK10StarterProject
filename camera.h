@@ -96,21 +96,52 @@ void cameraStop() {
   Wire.begin(I2C_SDA, I2C_SCL);
 }
 
-// Draws one camera frame onto the TFT starting at y=24 (below header)
+// Draws one camera frame onto the TFT starting at y=24 (below header).
+// Uses LovyanGFX pushPixelsDMA() for non-blocking transfer: after the call
+// returns the DMA controller owns the pixel data and the CPU is free.
+// prevFb is held across calls and returned only after waitDMA() confirms the
+// previous transfer is complete, preventing a use-after-free on the PSRAM buffer.
 void cameraDrawFrame() {
+  static camera_fb_t* prevFb = nullptr;
+
+  // Wait for the previous DMA transfer to finish before releasing its buffer.
+  tft.waitDMA();
+  if (prevFb) { esp_camera_fb_return(prevFb); prevFb = nullptr; }
+
   camera_fb_t* fb = esp_camera_fb_get();
   if (!fb) return;
 
-  // HQVGA = 240x176, RGB565 — fits exactly in portrait width
+  // HQVGA = 240x176, RGB565 — fits exactly in portrait width.
   // Centre vertically in content area (308px tall): top margin = (284-176)/2 = 54
   int imgY = 24 + 54;
   tft.startWrite();
   tft.setAddrWindow(0, imgY, fb->width, fb->height);
-  // esp_camera RGB565 is big-endian (MSB first) — pass bigEndian=true to skip swap
-  tft.writePixels((uint16_t*)fb->buf, fb->width * fb->height, true, true);
+  // esp_camera RGB565 is big-endian — lgfx::rgb565_t preserves byte order.
+  // pushPixelsDMA() returns immediately; DMA runs in background.
+  tft.pushPixelsDMA((lgfx::rgb565_t*)fb->buf, fb->width * fb->height);
   tft.endWrite();
 
-  esp_camera_fb_return(fb);
+  prevFb = fb;  // keep alive until next call's waitDMA()
+}
+
+// FreeRTOS camera task — pinned to Core 1, priority 2.
+// Holds displayMutex for the duration of each frame write;
+// re-checks cameraInitialized under the mutex to avoid calling
+// esp_camera_fb_get() after a concurrent cameraStop().
+void cameraTaskFn(void* pvParameters) {
+  for (;;) {
+    if (currentTest == 5) {
+      if (xSemaphoreTake(displayMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
+        if (cameraInitialized) {
+          cameraDrawFrame();  // esp_camera_fb_get() yields CPU while waiting
+        }
+        xSemaphoreGive(displayMutex);
+      }
+      taskYIELD();  // prevent starving loopTask between back-to-back frames
+    } else {
+      vTaskDelay(pdMS_TO_TICKS(50));  // sleep when not on camera screen
+    }
+  }
 }
 
 void showCamera() {

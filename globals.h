@@ -2,17 +2,15 @@
 
 // Library includes needed for complex extern types
 #include <SPI.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_ILI9341.h>
+#include "lgfx_config.h"
 #include <Adafruit_NeoPixel.h>
 #include "driver/i2s.h"   // for esp_err_t
 
 // ======================================================
 // OBJECTS (defined in K10ComponentTest.ino)
 // ======================================================
-extern SPIClass          spiDisplay;
-extern SPIClass          spiSD;
-extern Adafruit_ILI9341  tft;
+extern SPIClass  spiSD;
+extern LGFX      tft;
 extern Adafruit_NeoPixel leds;
 
 // ======================================================
@@ -57,4 +55,6 @@ extern unsigned long lastMicRead;
 // ======================================================
 // CAMERA COMPONENT STATE
 // ======================================================
-extern bool cameraInitialized;
+extern bool              cameraInitialized;
+extern TaskHandle_t      cameraTaskHandle;
+extern SemaphoreHandle_t displayMutex;

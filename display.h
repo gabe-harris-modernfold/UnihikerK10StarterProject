@@ -1,7 +1,6 @@
 #pragma once
 
-#include <Adafruit_GFX.h>
-#include <Adafruit_ILI9341.h>
+#include "lgfx_config.h"
 #include "config.h"
 #include "globals.h"
 

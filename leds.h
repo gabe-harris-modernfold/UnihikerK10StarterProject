@@ -14,7 +14,7 @@
 void showLEDs() {
   static const char*    stepNames[] = { "RED", "GREEN", "BLUE", "WHITE", "OFF" };
   static const uint16_t stepTFT[]   = {
-    ILI9341_RED, ILI9341_GREEN, ILI9341_BLUE, ILI9341_WHITE, CP_FOOTER_BG
+    CP_ERR, CP_OK, 0x001F, CP_VALUE, CP_FOOTER_BG
   };
   uint32_t stepColor;
   switch (ledCycleStep) {

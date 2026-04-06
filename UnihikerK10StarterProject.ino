@@ -21,8 +21,7 @@
 // ---- System / library includes ----
 #include <Wire.h>
 #include <SPI.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_ILI9341.h>
+#include "lgfx_config.h"
 #include <Adafruit_NeoPixel.h>
 #include <SD.h>
 #include "driver/i2s.h"
@@ -51,9 +50,8 @@
 // ======================================================
 // OBJECTS
 // ======================================================
-SPIClass spiDisplay(FSPI);
 SPIClass spiSD(HSPI);
-Adafruit_ILI9341 tft(&spiDisplay, TFT_DC, TFT_CS, -1);
+LGFX tft;
 Adafruit_NeoPixel leds(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 // ======================================================
@@ -90,7 +88,9 @@ int16_t micSamp[4]     = {0,0,0,0}; // first 4 raw samples
 unsigned long lastMicRead = 0;
 
 // Camera component state
-bool cameraInitialized = false;
+bool              cameraInitialized = false;
+TaskHandle_t      cameraTaskHandle  = NULL;
+SemaphoreHandle_t displayMutex      = NULL;
 
 // ======================================================
 // COMPONENT DISPATCHER
@@ -127,14 +127,29 @@ void setup() {
   configureButtons();
   configureSuccessLed();
 
-  spiDisplay.begin(TFT_SCLK, TFT_MISO, TFT_MOSI, TFT_CS);
-  tft.begin();
-  tft.setRotation(2); // Portrait, correct orientation
-  tft.fillScreen(ILI9341_BLACK);
+  tft.init();
+  tft.fillScreen(0x0000);
 
   leds.begin();
   leds.clear();
   leds.show();
+
+  // FreeRTOS display mutex — must exist before cameraTaskFn starts
+  displayMutex = xSemaphoreCreateMutex();
+  configASSERT(displayMutex != NULL);
+
+  // Camera task pinned to Core 1, priority 2 (above loopTask's priority 1).
+  // Stack 4096 bytes — cameraDrawFrame() locals are trivial; frame data is in PSRAM.
+  xTaskCreatePinnedToCore(
+    cameraTaskFn,      // task function (defined in camera.h)
+    "cameraTask",      // name for vTaskList debugging
+    4096,              // stack bytes (ESP32 Arduino uses bytes, not words)
+    NULL,              // pvParameters — task reads globals directly
+    2,                 // priority
+    &cameraTaskHandle, // handle stored for future suspend/delete
+    1                  // Core 1
+  );
+  configASSERT(cameraTaskHandle != NULL);
 
   // Keep font chip deselected at boot (GPIO 40 LOW = NPN off = CS# HIGH = font idle)
   // Same pin as SD_CS — LOW also means SD is selectable normally
@@ -157,7 +172,11 @@ void loop() {
   if (btnA && !prevBtnA) {
     leds.clear(); leds.show(); setSuccessLed(false);
     if (i2sInstalled) i2sUninstall();
-    if (cameraInitialized) cameraStop();
+    if (cameraInitialized) {
+      xSemaphoreTake(displayMutex, portMAX_DELAY);
+      cameraStop();
+      xSemaphoreGive(displayMutex);
+    }
     currentTest = (currentTest + 1) % NUM_TESTS;
     if (currentTest == 4) { ledCycleStep = 0; lastLedStep = now; }
     if (currentTest == 6) { spkrVolStep = 0; spkrPhase = 0.0f; lastVolStep = now; }
@@ -168,7 +187,11 @@ void loop() {
   if (btnB && !prevBtnB) {
     leds.clear(); leds.show(); setSuccessLed(false);
     if (i2sInstalled) i2sUninstall();
-    if (cameraInitialized) cameraStop();
+    if (cameraInitialized) {
+      xSemaphoreTake(displayMutex, portMAX_DELAY);
+      cameraStop();
+      xSemaphoreGive(displayMutex);
+    }
     currentTest = (currentTest - 1 + NUM_TESTS) % NUM_TESTS;
     if (currentTest == 4) { ledCycleStep = 0; lastLedStep = now; }
     if (currentTest == 6) { spkrVolStep = 0; spkrPhase = 0.0f; lastVolStep = now; }
@@ -182,11 +205,6 @@ void loop() {
   // --- Install / uninstall I2S as needed ---
   if (currentTest == 6 && !i2sInstalled) i2sInstallSpeaker();
   if (currentTest == 7 && !i2sInstalled) i2sInstallMic();
-
-  // --- Camera: draw frame every loop ---
-  if (currentTest == 5 && cameraInitialized) {
-    cameraDrawFrame();
-  }
 
   // --- LED cycle (1s) ---
   if (currentTest == 4 && now - lastLedStep >= 1000) {
@@ -213,8 +231,10 @@ void loop() {
   if (needsRedraw ||
       (liveTest   && now - lastRefresh >= 1000) ||
       (spkrActive && now - lastRefresh >= 1000)) {
+    xSemaphoreTake(displayMutex, portMAX_DELAY);
     renderCurrentTest();
     needsRedraw = false;
     lastRefresh = now;
+    xSemaphoreGive(displayMutex);
   }
 }
