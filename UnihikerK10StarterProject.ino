@@ -1,0 +1,220 @@
+/*
+  UNIHIKER K10 (ESP32-S3 WROOM 1) — Starter Project
+  BTN_A (XL9535 P1.4) = Next component
+  BTN_B (XL9535 P0.2) = Previous component
+  Live sensor readings refresh every 1s.
+  Mic VU meter refreshes every 200ms.
+
+  GPIO 38 NOTE: shared by IIS_LRCK (speaker/mic) and FONT_CS (font chip).
+  Cannot be used simultaneously — sequential screens, no conflict.
+  GPIO 45 = speaker DOUT. GPIO 46 = WS2812 LEDs only (no I2S conflict).
+
+  References
+  https://www.unihiker.com/wiki/K10/HardwareReference/img/hardwarereference_onboard/UnihikerK10Schematic.pdf
+  https://www.unihiker.com/wiki/K10/HardwareReference/hardwarereference_specs/#system-framwork
+  https://www.makerbrains.com/projects/learn-edge-ai-on-unihiker-k10
+  https://github.com/MukeshSankhla/Learn-Edge-AI-on-Unihiker-K10-Edge-Impulse-Beginner-Tutorial-
+  https://hackaday.io/project/203864-light-meter-unihiker-k10-with-arduino-libraries/details
+  Thank you, Mukesh Sankhla!
+*/
+
+// ---- System / library includes ----
+#include <Wire.h>
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_ILI9341.h>
+#include <Adafruit_NeoPixel.h>
+#include <SD.h>
+#include "driver/i2s.h"
+#include "driver/i2c.h"
+#include "esp_camera.h"
+#include "initBoard.h"   // init_board() configures XL9535 + ES7243E codec
+#include <math.h>
+
+// ---- Project headers (config and globals first, then drivers) ----
+#include "config.h"
+#include "globals.h"
+#include "xl9535.h"
+#include "display.h"
+#include "i2s_audio.h"
+#include "aht20.h"
+#include "ltr303.h"
+#include "sc7a20h.h"
+#include "sd_card.h"
+#include "leds.h"
+#include "camera.h"
+#include "speaker.h"
+#include "mic.h"
+#include "fontchip.h"
+#include "xl9535_test.h"
+
+// ======================================================
+// OBJECTS
+// ======================================================
+SPIClass spiDisplay(FSPI);
+SPIClass spiSD(HSPI);
+Adafruit_ILI9341 tft(&spiDisplay, TFT_DC, TFT_CS, -1);
+Adafruit_NeoPixel leds(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+
+// ======================================================
+// STATE
+// ======================================================
+int  currentTest    = 0;
+const int NUM_TESTS = 10;
+bool prevBtnA       = false;
+bool prevBtnB       = false;
+bool needsRedraw    = true;
+unsigned long lastRefresh = 0;
+
+// LED component state
+int  ledCycleStep   = 0;
+unsigned long lastLedStep = 0;
+
+// Speaker component state
+bool  i2sInstalled  = false;
+int   spkrVolStep   = 0;    // 0–4 → 20%..100%
+float spkrPhase     = 0.0f;
+unsigned long lastVolStep = 0;
+
+// Mic component state — stored as dBFS (0 = full scale, floor = silence)
+float micDbL        = MIC_FLOOR_DB;
+float micDbR        = MIC_FLOOR_DB;
+float micPeakDbL    = MIC_FLOOR_DB;
+float micPeakDbR    = MIC_FLOOR_DB;
+size_t  micLastBytes   = 0;
+int32_t micRawMax      = 0;
+esp_err_t micInstallErr = ESP_OK;  // i2s_driver_install return
+esp_err_t micPinErr     = ESP_OK;  // i2s_set_pin return
+esp_err_t micReadErr    = ESP_OK;  // i2s_read return
+int16_t micSamp[4]     = {0,0,0,0}; // first 4 raw samples
+unsigned long lastMicRead = 0;
+
+// Camera component state
+bool cameraInitialized = false;
+
+// ======================================================
+// COMPONENT DISPATCHER
+// ======================================================
+void renderCurrentTest() {
+  switch (currentTest) {
+    case 0: showAHT20();     break;
+    case 1: showLTR303();    break;
+    case 2: showSC7A20H();   break;
+    case 3: showSD();        break;
+    case 4: showLEDs();      break;
+    case 5: showCamera();    break;
+    case 6: showSpeaker();   break;
+    case 7: showMic();       break;
+    case 8: showFontChip();  break;
+    case 9: showXL9535();    break;
+  }
+}
+
+// ======================================================
+// SETUP
+// ======================================================
+void setup() {
+  Serial.begin(115200);
+
+  // init_board() configures XL9535 (backlight, camera RST, button pins) and
+  // initializes the ES7243E audio codec via I2C so the mic I2S stream works.
+  // Must run before Wire.begin() as it uses ESP-IDF I2C directly.
+  Wire.begin(I2C_SDA, I2C_SCL); // init_board needs I2C already up on same bus
+  init_board();
+
+  // Re-apply our own XL9535 settings on top of init_board's defaults
+  enableDisplayBacklight();
+  configureButtons();
+  configureSuccessLed();
+
+  spiDisplay.begin(TFT_SCLK, TFT_MISO, TFT_MOSI, TFT_CS);
+  tft.begin();
+  tft.setRotation(2); // Portrait, correct orientation
+  tft.fillScreen(ILI9341_BLACK);
+
+  leds.begin();
+  leds.clear();
+  leds.show();
+
+  // Keep font chip deselected at boot (GPIO 40 LOW = NPN off = CS# HIGH = font idle)
+  // Same pin as SD_CS — LOW also means SD is selectable normally
+  pinMode(FONT_CS, OUTPUT);
+  digitalWrite(FONT_CS, LOW);
+
+  needsRedraw = true;
+}
+
+// ======================================================
+// LOOP
+// ======================================================
+void loop() {
+  unsigned long now = millis();
+
+  // --- Button edge detection ---
+  bool btnA = readBtnA();
+  bool btnB = readBtnB();
+
+  if (btnA && !prevBtnA) {
+    leds.clear(); leds.show(); setSuccessLed(false);
+    if (i2sInstalled) i2sUninstall();
+    if (cameraInitialized) cameraStop();
+    currentTest = (currentTest + 1) % NUM_TESTS;
+    if (currentTest == 4) { ledCycleStep = 0; lastLedStep = now; }
+    if (currentTest == 6) { spkrVolStep = 0; spkrPhase = 0.0f; lastVolStep = now; }
+    if (currentTest == 7) { micPeakDbL = MIC_FLOOR_DB; micPeakDbR = MIC_FLOOR_DB; }
+    needsRedraw = true;
+    lastRefresh = now;
+  }
+  if (btnB && !prevBtnB) {
+    leds.clear(); leds.show(); setSuccessLed(false);
+    if (i2sInstalled) i2sUninstall();
+    if (cameraInitialized) cameraStop();
+    currentTest = (currentTest - 1 + NUM_TESTS) % NUM_TESTS;
+    if (currentTest == 4) { ledCycleStep = 0; lastLedStep = now; }
+    if (currentTest == 6) { spkrVolStep = 0; spkrPhase = 0.0f; lastVolStep = now; }
+    if (currentTest == 7) { micPeakDbL = MIC_FLOOR_DB; micPeakDbR = MIC_FLOOR_DB; }
+    needsRedraw = true;
+    lastRefresh = now;
+  }
+  prevBtnA = btnA;
+  prevBtnB = btnB;
+
+  // --- Install / uninstall I2S as needed ---
+  if (currentTest == 6 && !i2sInstalled) i2sInstallSpeaker();
+  if (currentTest == 7 && !i2sInstalled) i2sInstallMic();
+
+  // --- Camera: draw frame every loop ---
+  if (currentTest == 5 && cameraInitialized) {
+    cameraDrawFrame();
+  }
+
+  // --- LED cycle (1s) ---
+  if (currentTest == 4 && now - lastLedStep >= 1000) {
+    ledCycleStep = (ledCycleStep + 1) % 5;
+    lastLedStep  = now;
+    needsRedraw  = true;
+  }
+
+  // --- Speaker: fill I2S buffer every loop ---
+  if (currentTest == 6 && i2sInstalled) {
+    fillSpeakerBuffer(now);
+  }
+
+  // --- Mic: read buffer every 200ms ---
+  if (currentTest == 7 && i2sInstalled && now - lastMicRead >= 200) {
+    readMicBuffer();
+    lastMicRead = now;
+  }
+
+  // --- Screen refresh ---
+  bool liveTest  = (currentTest <= 2 || currentTest == 9); // sensors + XL9535: 1s
+  bool spkrActive= (currentTest == 6);                     // speaker: 1s (vol label)
+
+  if (needsRedraw ||
+      (liveTest   && now - lastRefresh >= 1000) ||
+      (spkrActive && now - lastRefresh >= 1000)) {
+    renderCurrentTest();
+    needsRedraw = false;
+    lastRefresh = now;
+  }
+}
