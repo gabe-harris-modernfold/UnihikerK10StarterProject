@@ -46,6 +46,7 @@
 #include "mic.h"
 #include "fontchip.h"
 #include "xl9535_test.h"
+#include "bootscreen.h"
 
 // ======================================================
 // OBJECTS
@@ -167,6 +168,9 @@ void setup() {
   // defined state (i2s_zero_dma_buffer runs before pins go live).
   i2sInstallSpeaker();
   i2sUninstall();
+
+  // Boot splash — fades "UNIHIKER K10" in over 5 s, then waits for a button press
+  runBootScreen();
 
   needsRedraw = true;
 }
