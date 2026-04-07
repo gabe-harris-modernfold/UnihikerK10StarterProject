@@ -215,12 +215,12 @@ Before shipping your application:
 - **ESP32 Arduino Core**: https://github.com/espressif/arduino-esp32
 
 ##References
-- **https://www.unihiker.com/wiki/K10/HardwareReference/img/hardwarereference_onboard/UnihikerK10Schematic.pdf
-- **https://www.unihiker.com/wiki/K10/HardwareReference/hardwarereference_specs/#system-framwork
-- **https://www.makerbrains.com/projects/learn-edge-ai-on-unihiker-k10
-- **https://github.com/MukeshSankhla/Learn-Edge-AI-on-Unihiker-K10-Edge-Impulse-Beginner-Tutorial-
-- **https://hackaday.io/project/203864-light-meter-unihiker-k10-with-arduino-libraries/details
-- **Thank you, Mukesh Sankhla!
+- https://www.unihiker.com/wiki/K10/HardwareReference/img/hardwarereference_onboard/UnihikerK10Schematic.pdf
+- https://www.unihiker.com/wiki/K10/HardwareReference/hardwarereference_specs/#system-framwork
+- https://www.makerbrains.com/projects/learn-edge-ai-on-unihiker-k10
+- https://github.com/MukeshSankhla/Learn-Edge-AI-on-Unihiker-K10-Edge-Impulse-Beginner-Tutorial-
+- https://hackaday.io/project/203864-light-meter-unihiker-k10-with-arduino-libraries/details
+- Thank you, Mukesh Sankhla!
 ---
 
 **Happy hacking!** This starter project is designed to be modified. Use it as a foundation, delete what you don't need, and build something cool. 🚀
