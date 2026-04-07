@@ -10,6 +10,12 @@
 // Shared by speaker.h and mic.h
 // ======================================================
 
+// Speaker fade-in parameters
+#define SPKR_CHUNK      256       // samples per fillSpeakerBuffer() call (~5.8 ms at 44.1 kHz)
+#define SPKR_RAMP_S     30.0f    // fade-in duration in seconds
+#define SPKR_DB_START  -60.0f    // initial level (dBFS)
+#define SPKR_DB_RANGE   20.0f    // ramp spans this many dB (ends at -40 dBFS)
+
 void i2sInstallSpeaker() {
   i2s_config_t cfg = {
     .mode                 = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
@@ -78,28 +84,25 @@ void i2sUninstall() {
 }
 
 // Called every loop() when on the speaker screen — fills I2S TX buffer
-void fillSpeakerBuffer(unsigned long now) {
-  (void)now;
-
-  // Advance ramp fraction 0..1 once per chunk (256 samples ≈ 5.8 ms — inaudible granularity).
-  const int   CHUNK    = 256;
-  const float fracStep = (float)CHUNK / (SAMPLE_RATE * 30.0f);
+void fillSpeakerBuffer() {
+  // Advance ramp fraction 0..1 once per chunk (SPKR_CHUNK samples ≈ 5.8 ms — inaudible granularity).
+  const float fracStep = (float)SPKR_CHUNK / (SAMPLE_RATE * SPKR_RAMP_S);
   if (spkrCurrentAmp < 1.0f) {
     spkrCurrentAmp += fracStep;
     if (spkrCurrentAmp > 1.0f) spkrCurrentAmp = 1.0f;
   }
 
-  // dB-linear scaling: fraction 0→1 maps to -60dBFS→-40dBFS (20 dB range).
+  // dB-linear scaling: fraction 0→1 maps SPKR_DB_START → (SPKR_DB_START + SPKR_DB_RANGE) dBFS.
   // The NS4168 amp saturates at roughly -40dBFS (~328 PCM) on this hardware,
-  // so this stretches the entire audible fade across the full 30-second ramp.
+  // so this stretches the entire audible fade across the full ramp duration.
   // powf is called once per chunk, not per sample — negligible cost.
-  float dbFS   = -60.0f + spkrCurrentAmp * 20.0f;
+  float dbFS     = SPKR_DB_START + spkrCurrentAmp * SPKR_DB_RANGE;
   float chunkAmp = 32767.0f * powf(10.0f, dbFS / 20.0f);
 
-  int16_t buf[CHUNK * 2]; // stereo interleaved
+  int16_t buf[SPKR_CHUNK * 2]; // stereo interleaved
   const float phaseInc = 2.0f * (float)M_PI * TONE_HZ / SAMPLE_RATE;
 
-  for (int i = 0; i < CHUNK; i++) {
+  for (int i = 0; i < SPKR_CHUNK; i++) {
     int16_t s = (int16_t)(chunkAmp * sinf(spkrPhase));
     spkrPhase += phaseInc;
     if (spkrPhase >= 2.0f * (float)M_PI) spkrPhase -= 2.0f * (float)M_PI;

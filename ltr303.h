@@ -39,12 +39,17 @@ void showLTR303() {
   Wire.beginTransmission(LTR303_ADDR);
   Wire.write(0x80); Wire.write(0x01);
   Wire.endTransmission();
+  // LTR-303 datasheet §2.5: active mode first conversion ≤100 ms; 120 ms adds margin
   delay(120);
 
   Wire.beginTransmission(LTR303_ADDR);
   Wire.write(0x88);
   Wire.endTransmission(false);
-  Wire.requestFrom((uint8_t)LTR303_ADDR, (uint8_t)4);
+  uint8_t got = Wire.requestFrom((uint8_t)LTR303_ADDR, (uint8_t)4);
+  if (got < 4) {
+    printRow(y, CP_ACCENT, "Read:", CP_ERR, "short read");
+    drawFooter(); return;
+  }
   uint16_t ch1 = Wire.read() | ((uint16_t)Wire.read() << 8);
   uint16_t ch0 = Wire.read() | ((uint16_t)Wire.read() << 8);
 

@@ -39,9 +39,14 @@ void showAHT20() {
   Wire.beginTransmission(AHT20_ADDR);
   Wire.write(0xAC); Wire.write(0x33); Wire.write(0x00);
   Wire.endTransmission();
+  // AHT20 datasheet §8.4: measurement completes in ≤75 ms; 80 ms adds margin
   delay(80);
 
-  Wire.requestFrom((uint8_t)AHT20_ADDR, (uint8_t)6);
+  uint8_t got = Wire.requestFrom((uint8_t)AHT20_ADDR, (uint8_t)6);
+  if (got < 6) {
+    printRow(y, CP_ACCENT, "Read:", CP_ERR, "short read");
+    drawFooter(); return;
+  }
   uint8_t data[6];
   for (int i = 0; i < 6; i++) data[i] = Wire.read();
 

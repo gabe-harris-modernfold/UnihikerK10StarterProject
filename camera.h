@@ -33,13 +33,17 @@ void camSetReset(bool asserted) {
   Wire.write(0x02); Wire.write(out); Wire.endTransmission();
 }
 
-bool cameraInit() {
-  // esp_camera takes over I2C — release Wire first
-  Wire.end();
+// Assert CAM_RST low for ≥1 ms (GC2145 datasheet), then release and wait
+// 100 ms for the sensor's internal PLL to lock before SCCB access.
+void cameraResetPulse() {
+  camSetReset(true);  delay(10);   // hold reset (10 ms >> 1 ms min)
+  camSetReset(false); delay(100);  // PLL lock time
+}
 
-  // Reset pulse: assert → start XCLK → release → wait
-  // (Wire is ended so XL9535 calls won't work here; do reset before Wire.end)
-  delay(10);
+bool cameraInit() {
+  // esp_camera takes over I2C — release Wire first.
+  // Reset pulse was performed by the caller (showCamera) while Wire was live.
+  Wire.end();
 
   camera_config_t config;
   config.ledc_channel   = LEDC_CHANNEL_0;
@@ -170,8 +174,7 @@ void showCamera() {
   canvas.pushSprite(0, 0); // show "Initialising..." immediately before blocking init
 
   // Perform reset pulse while Wire is still available
-  camSetReset(true);  delay(10);
-  camSetReset(false); delay(100);
+  cameraResetPulse();
 
   if (cameraInit()) {
     cameraInitialized = true;

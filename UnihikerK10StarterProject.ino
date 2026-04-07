@@ -126,6 +126,7 @@ void setup() {
   enableDisplayBacklight();
   configureButtons();
   configureSuccessLed();
+  setSuccessLed(false);  // XL9535 output register defaults HIGH at power-on — force off
 
   tft.init();
   tft.fillScreen(0x0000);
@@ -160,6 +161,12 @@ void setup() {
   // Same pin as SD_CS — LOW also means SD is selectable normally
   pinMode(FONT_CS, OUTPUT);
   digitalWrite(FONT_CS, LOW);
+
+  // Silence NS4168 amp at boot — floating I2S pins cause faint noise until
+  // speaker screen is visited. Brief install+uninstall drives pins to a
+  // defined state (i2s_zero_dma_buffer runs before pins go live).
+  i2sInstallSpeaker();
+  i2sUninstall();
 
   needsRedraw = true;
 }
@@ -220,7 +227,7 @@ void loop() {
 
   // --- Speaker: fill I2S buffer every loop ---
   if (currentTest == 6 && i2sInstalled) {
-    fillSpeakerBuffer(now);
+    fillSpeakerBuffer();
   }
 
   // --- Mic: read buffer every 200ms ---
