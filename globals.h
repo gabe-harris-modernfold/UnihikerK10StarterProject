@@ -58,3 +58,10 @@ extern unsigned long lastMicRead;
 extern bool              cameraInitialized;
 extern TaskHandle_t      cameraTaskHandle;
 extern SemaphoreHandle_t displayMutex;
+
+// ======================================================
+// BACKLIGHT DEMO STATE
+// ======================================================
+extern bool          backlightOn;
+extern int           backlightDemoStep;
+extern unsigned long lastBacklightStep;

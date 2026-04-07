@@ -46,6 +46,7 @@
 #include "mic.h"
 #include "fontchip.h"
 #include "xl9535_test.h"
+#include "backlight.h"
 #include "bootscreen.h"
 
 // ======================================================
@@ -60,7 +61,7 @@ Adafruit_NeoPixel leds(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 // STATE
 // ======================================================
 int  currentTest    = 0;
-const int NUM_TESTS = 10;
+const int NUM_TESTS = 11;
 bool prevBtnA       = false;
 bool prevBtnB       = false;
 bool needsRedraw    = true;
@@ -93,6 +94,11 @@ bool              cameraInitialized = false;
 TaskHandle_t      cameraTaskHandle  = NULL;
 SemaphoreHandle_t displayMutex      = NULL;
 
+// Backlight demo state
+bool          backlightOn       = true;
+int           backlightDemoStep = 0;
+unsigned long lastBacklightStep = 0;
+
 // ======================================================
 // COMPONENT DISPATCHER
 // ======================================================
@@ -108,6 +114,7 @@ void renderCurrentTest() {
     case 7: showMic();       break;
     case 8: showFontChip();  break;
     case 9: showXL9535();    break;
+    case 10: showBacklight(); break;
   }
 }
 
@@ -193,10 +200,12 @@ void loop() {
       cameraStop();
       xSemaphoreGive(displayMutex);
     }
+    if (currentTest == 10) { setBacklight(true); backlightOn = true; }
     currentTest = (currentTest + 1) % NUM_TESTS;
-    if (currentTest == 4) { ledCycleStep = 0; lastLedStep = now; }
-    if (currentTest == 6) { spkrPhase = 0.0f; spkrCurrentAmp = 0.0f; }
-    if (currentTest == 7) { micPeakDbL = MIC_FLOOR_DB; micPeakDbR = MIC_FLOOR_DB; }
+    if (currentTest == 4)  { ledCycleStep = 0; lastLedStep = now; }
+    if (currentTest == 6)  { spkrPhase = 0.0f; spkrCurrentAmp = 0.0f; }
+    if (currentTest == 7)  { micPeakDbL = MIC_FLOOR_DB; micPeakDbR = MIC_FLOOR_DB; }
+    if (currentTest == 10) { backlightDemoStep = 0; lastBacklightStep = now; backlightOn = true; }
     needsRedraw = true;
     lastRefresh = now;
   }
@@ -208,10 +217,12 @@ void loop() {
       cameraStop();
       xSemaphoreGive(displayMutex);
     }
+    if (currentTest == 10) { setBacklight(true); backlightOn = true; }
     currentTest = (currentTest - 1 + NUM_TESTS) % NUM_TESTS;
-    if (currentTest == 4) { ledCycleStep = 0; lastLedStep = now; }
-    if (currentTest == 6) { spkrPhase = 0.0f; spkrCurrentAmp = 0.0f; }
-    if (currentTest == 7) { micPeakDbL = MIC_FLOOR_DB; micPeakDbR = MIC_FLOOR_DB; }
+    if (currentTest == 4)  { ledCycleStep = 0; lastLedStep = now; }
+    if (currentTest == 6)  { spkrPhase = 0.0f; spkrCurrentAmp = 0.0f; }
+    if (currentTest == 7)  { micPeakDbL = MIC_FLOOR_DB; micPeakDbR = MIC_FLOOR_DB; }
+    if (currentTest == 10) { backlightDemoStep = 0; lastBacklightStep = now; backlightOn = true; }
     needsRedraw = true;
     lastRefresh = now;
   }
@@ -240,8 +251,20 @@ void loop() {
     lastMicRead = now;
   }
 
+  // --- Backlight demo cycle: ON 3s → OFF 2s → repeat ---
+  if (currentTest == 10) {
+    unsigned long stepDuration = (backlightDemoStep == 0) ? 3000UL : 2000UL;
+    if (now - lastBacklightStep >= stepDuration) {
+      backlightDemoStep = 1 - backlightDemoStep;
+      backlightOn = (backlightDemoStep == 0);
+      setBacklight(backlightOn);
+      lastBacklightStep = now;
+      needsRedraw = true;
+    }
+  }
+
   // --- Screen refresh ---
-  bool liveTest  = (currentTest <= 2 || currentTest == 9); // sensors + XL9535: 1s
+  bool liveTest  = (currentTest <= 2 || currentTest == 9 || currentTest == 10); // sensors + XL9535 + backlight: 1s
   bool spkrActive= (currentTest == 6);                     // speaker: 1s (vol label)
 
   if (needsRedraw ||

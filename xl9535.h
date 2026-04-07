@@ -11,6 +11,19 @@
 // P1.7 = SuccessLed (active-high, green)
 // ======================================================
 
+void setBacklight(bool on) {
+  Wire.beginTransmission(XL9535_ADDR);
+  Wire.write(0x02);
+  Wire.endTransmission(false);
+  Wire.requestFrom((uint8_t)XL9535_ADDR, (uint8_t)1);
+  uint8_t out0 = Wire.read();
+  if (on) out0 |= 0x01; else out0 &= ~0x01;
+  Wire.beginTransmission(XL9535_ADDR);
+  Wire.write(0x02);
+  Wire.write(out0);
+  Wire.endTransmission();
+}
+
 void enableDisplayBacklight() {
   Wire.beginTransmission(XL9535_ADDR);
   Wire.write(0x06);
@@ -22,17 +35,7 @@ void enableDisplayBacklight() {
   Wire.write(0x06);
   Wire.write(cfg);
   Wire.endTransmission();
-
-  Wire.beginTransmission(XL9535_ADDR);
-  Wire.write(0x02);
-  Wire.endTransmission(false);
-  Wire.requestFrom((uint8_t)XL9535_ADDR, (uint8_t)1);
-  uint8_t out = Wire.read();
-  out |= 0x01;
-  Wire.beginTransmission(XL9535_ADDR);
-  Wire.write(0x02);
-  Wire.write(out);
-  Wire.endTransmission();
+  setBacklight(true);
 }
 
 void configureButtons() {
