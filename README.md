@@ -5,7 +5,7 @@ An embedded systems framework for the **Unihiker K10** DFRobot device (ESP32-S3)
 ## Quick Start
 
 1. **Compile**: Arduino IDE (ESP32 board support required)
-2. **Upload**: Select ESP32-S3-DevKitC-1 as target board
+2. **Upload**: Select unihiker k10 as target board
 3. **Run**: Press button A/B to navigate between 10 hardware tests
 
 ## Project Purpose
