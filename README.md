@@ -1,6 +1,6 @@
 # Unihiker K10 Starter Project
 
-An embedded systems framework for the **Unihiker K10** device (ESP32-S3) that provides modular hardware abstraction and 10 independent component tests. Designed for developers to explore sensor and application logic without wrestling with low-level hardware details.
+An embedded systems framework for the **Unihiker K10** DFRobot device (ESP32-S3) that provides modular hardware abstraction and 10 independent component tests. Designed for developers to explore sensor and application logic without wrestling with low-level hardware details.
 
 ## Quick Start
 
