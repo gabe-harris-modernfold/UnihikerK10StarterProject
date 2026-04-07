@@ -246,7 +246,7 @@ void loop() {
   }
 
   // --- Mic: read buffer every 200ms ---
-  if (currentTest == 7 && i2sInstalled && now - lastMicRead >= 200) {
+  if (currentTest == 7 && i2sInstalled && now - lastMicRead >= 20) {
     readMicBuffer();
     lastMicRead = now;
   }

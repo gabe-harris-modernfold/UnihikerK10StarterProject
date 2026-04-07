@@ -114,13 +114,13 @@ void fillSpeakerBuffer() {
   i2s_write(I2S_PORT, buf, sizeof(buf), &bytesWritten, pdMS_TO_TICKS(10));
 }
 
-// Called every 200ms when on the mic screen — reads and computes RMS dBFS
+// Called every ~20ms when on the mic screen — reads and computes RMS dBFS
 void readMicBuffer() {
   // 16-bit stereo: each frame = 2 bytes L + 2 bytes R = 4 bytes
   const int FRAMES = 300;
   int16_t buf[FRAMES * 2];
   size_t bytesRead = 0;
-  micReadErr = i2s_read(I2S_PORT, buf, sizeof(buf), &bytesRead, pdMS_TO_TICKS(100));
+  micReadErr = i2s_read(I2S_PORT, buf, sizeof(buf), &bytesRead, pdMS_TO_TICKS(10));
   micLastBytes = bytesRead;
 
   int n = bytesRead / 4; // stereo frames
