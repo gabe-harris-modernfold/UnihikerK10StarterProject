@@ -1,11 +1,11 @@
 # Unihiker K10 Starter Project
 
-An embedded systems framework for the **Unihiker K10** device (ESP32-S3) that provides modular hardware abstraction and 10 independent component tests. Designed for developers to explore sensor and application logic without wrestling with low-level hardware details.
+An embedded systems starter project for the **Unihiker K10** DFRobot device (ESP32-S3) that provides modular hardware abstraction and 10 independent component tests. Designed for developers to explore sensor and application logic without wrestling with low-level hardware details.
 
 ## Quick Start
 
 1. **Compile**: Arduino IDE (ESP32 board support required)
-2. **Upload**: Select ESP32-S3-DevKitC-1 as target board
+2. **Upload**: Select unihiker k10 as target board
 3. **Run**: Press button A/B to navigate between 10 hardware tests
 
 ## Project Purpose
@@ -214,6 +214,13 @@ Before shipping your application:
 - **Adafruit_NeoPixel**: https://github.com/adafruit/Adafruit_NeoPixel
 - **ESP32 Arduino Core**: https://github.com/espressif/arduino-esp32
 
+##References
+- https://www.unihiker.com/wiki/K10/HardwareReference/img/hardwarereference_onboard/UnihikerK10Schematic.pdf
+- https://www.unihiker.com/wiki/K10/HardwareReference/hardwarereference_specs/#system-framwork
+- https://www.makerbrains.com/projects/learn-edge-ai-on-unihiker-k10
+- https://github.com/MukeshSankhla/Learn-Edge-AI-on-Unihiker-K10-Edge-Impulse-Beginner-Tutorial-
+- https://hackaday.io/project/203864-light-meter-unihiker-k10-with-arduino-libraries/details
+- Thank you, Mukesh Sankhla!
 ---
 
 **Happy hacking!** This starter project is designed to be modified. Use it as a foundation, delete what you don't need, and build something cool. 🚀
